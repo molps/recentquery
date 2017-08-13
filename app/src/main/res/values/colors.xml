@@ -3,4 +3,9 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+
+
+    <!-- Colors for Dimming Views -->
+    <color name="startColor">#00FFFFFF</color>
+    <color name="endColor">#99000000</color>
 </resources>

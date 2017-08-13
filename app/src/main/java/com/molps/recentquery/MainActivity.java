@@ -1,9 +1,12 @@
 package com.molps.recentquery;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -18,13 +21,14 @@ import android.view.View;
 import com.molps.recentquery.RecentQueryContract.RecentQueryEntry;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
     private SQLiteDatabase mDb;
     private CustomRecAdapter mAdapter;
     private RecyclerView recyclerViewResults;
     private RecyclerView recyclerViewQuery;
+    private View dimView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,8 +36,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         RecentQueryDbHelper queryDbHelper = new RecentQueryDbHelper(this);
+        dimView = findViewById(R.id.dim_layout);
         mDb = queryDbHelper.getWritableDatabase();
-        mAdapter = new CustomRecAdapter(this, getRecentQuery());
+        mAdapter = new CustomRecAdapter(getRecentQuery());
         recyclerViewResults = (RecyclerView) findViewById(R.id.results_recView);
         recyclerViewQuery = (RecyclerView) findViewById(R.id.recent_query_recView);
         recyclerViewQuery.setLayoutManager(new LinearLayoutManager(this));
@@ -71,10 +76,16 @@ public class MainActivity extends AppCompatActivity {
         searchView.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
+                int startColor = ContextCompat.getColor(MainActivity.this, R.color.startColor);
+                int endColor = ContextCompat.getColor(MainActivity.this, R.color.endColor);
                 if (hasFocus) {
                     recyclerViewResults.setVisibility(View.GONE);
+                    recyclerViewQuery.setVisibility(View.VISIBLE);
+                    animateColor(startColor, endColor);
                 } else {
                     recyclerViewResults.setVisibility(View.VISIBLE);
+                    recyclerViewQuery.setVisibility(View.GONE);
+                    animateColor(endColor, startColor);
                 }
             }
         });
@@ -113,6 +124,18 @@ public class MainActivity extends AppCompatActivity {
                 null,
                 RecentQueryEntry._ID + " DESC");
 
+    }
+
+    private void animateColor(int startColor, int endColor) {
+        ValueAnimator colorAnimator = ValueAnimator.ofObject(new ArgbEvaluator(), startColor, endColor);
+        colorAnimator.setDuration(200);
+        colorAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                dimView.setBackgroundColor((int) animation.getAnimatedValue());
+            }
+        });
+        colorAnimator.start();
     }
 
 }

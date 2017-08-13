@@ -1,7 +1,6 @@
 package com.molps.recentquery;
 
 
-import android.content.Context;
 import android.database.Cursor;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -13,11 +12,9 @@ import com.molps.recentquery.RecentQueryContract.RecentQueryEntry;
 
 public class CustomRecAdapter extends RecyclerView.Adapter<CustomRecAdapter.MyViewHolder> {
     private Cursor cursor;
-    private Context context;
 
-    public CustomRecAdapter(Context context, Cursor cursor) {
+    public CustomRecAdapter(Cursor cursor) {
         this.cursor = cursor;
-        this.context = context;
     }
 
     @Override
@@ -33,8 +30,6 @@ public class CustomRecAdapter extends RecyclerView.Adapter<CustomRecAdapter.MyVi
         }
         String query = cursor.getString(cursor.getColumnIndex(RecentQueryEntry.COLUMN_QUERY));
         holder.queryTextView.setText(query);
-
-
     }
 
     @Override
@@ -53,7 +48,7 @@ public class CustomRecAdapter extends RecyclerView.Adapter<CustomRecAdapter.MyVi
     }
 
 
-    public class MyViewHolder extends RecyclerView.ViewHolder {
+    public class MyViewHolder extends RecyclerView.ViewHolder  {
 
         private TextView queryTextView;
 
@@ -61,5 +56,6 @@ public class CustomRecAdapter extends RecyclerView.Adapter<CustomRecAdapter.MyVi
             super(itemView);
             queryTextView = (TextView) itemView.findViewById(R.id.rec_query_textView);
         }
+
     }
 }
