@@ -42,13 +42,12 @@ public class CustomRecAdapter extends RecyclerView.Adapter<CustomRecAdapter.MyVi
     }
 
     public void swapCursor(Cursor newCursor) {
-        if (cursor != null) cursor.close();
         cursor = newCursor;
-        if (newCursor != null) notifyDataSetChanged();
+        notifyDataSetChanged();
     }
 
 
-    public class MyViewHolder extends RecyclerView.ViewHolder  {
+    public class MyViewHolder extends RecyclerView.ViewHolder {
 
         private TextView queryTextView;
 

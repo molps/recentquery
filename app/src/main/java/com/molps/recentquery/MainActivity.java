@@ -2,9 +2,12 @@ package com.molps.recentquery;
 
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
+import android.app.LoaderManager;
 import android.content.ContentValues;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
@@ -21,24 +24,25 @@ import android.view.View;
 import com.molps.recentquery.RecentQueryContract.RecentQueryEntry;
 
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
-    private SQLiteDatabase mDb;
+    private static final String BUNDLE_QUERY_KEY = "key 101";
     private CustomRecAdapter mAdapter;
     private RecyclerView recyclerViewResults;
     private RecyclerView recyclerViewQuery;
     private View dimView;
+    private Bundle mArgs;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        RecentQueryDbHelper queryDbHelper = new RecentQueryDbHelper(this);
+        mArgs = new Bundle();
         dimView = findViewById(R.id.dim_layout);
-        mDb = queryDbHelper.getWritableDatabase();
-        mAdapter = new CustomRecAdapter(getRecentQuery());
+        mAdapter = new CustomRecAdapter(null);
         recyclerViewResults = (RecyclerView) findViewById(R.id.results_recView);
         recyclerViewQuery = (RecyclerView) findViewById(R.id.recent_query_recView);
         recyclerViewQuery.setLayoutManager(new LinearLayoutManager(this));
@@ -64,9 +68,10 @@ public class MainActivity extends AppCompatActivity{
             public boolean onQueryTextChange(String newText) {
                 if (!TextUtils.isEmpty(newText)) {
                     recyclerViewQuery.setVisibility(View.VISIBLE);
-                    mAdapter.swapCursor(getQueryWithWildCards(newText));
+                    mArgs.putString(BUNDLE_QUERY_KEY, newText);
+                    getLoaderManager().restartLoader(0, mArgs, MainActivity.this);
                 } else {
-                    mAdapter.swapCursor(getRecentQuery());
+                    getLoaderManager().restartLoader(0, null, MainActivity.this);
                 }
 
                 return true;
@@ -97,34 +102,11 @@ public class MainActivity extends AppCompatActivity{
     private void saveRecentQuery(String query) {
         ContentValues values = new ContentValues();
         values.put(RecentQueryEntry.COLUMN_QUERY, query);
-        long insertResult = mDb.insert(RecentQueryEntry.TABLE_NAME, null, values);
+        Uri insertResult = getContentResolver().insert(RecentQueryEntry.CONTENT_URI, values);
+
         Log.v(LOG_TAG, "inserResult: " + insertResult);
     }
 
-    private Cursor getQueryWithWildCards(String newQuery) {
-        String[] args = new String[]{newQuery + "%"};
-        return mDb.query(
-                RecentQueryEntry.TABLE_NAME,
-                null,
-                RecentQueryEntry.COLUMN_QUERY + " LIKE ?",
-                args,
-                null,
-                null,
-                RecentQueryEntry._ID + " DESC");
-
-    }
-
-    private Cursor getRecentQuery() {
-        return mDb.query(
-                RecentQueryEntry.TABLE_NAME,
-                null,
-                null,
-                null,
-                null,
-                null,
-                RecentQueryEntry._ID + " DESC");
-
-    }
 
     private void animateColor(int startColor, int endColor) {
         ValueAnimator colorAnimator = ValueAnimator.ofObject(new ArgbEvaluator(), startColor, endColor);
@@ -136,6 +118,41 @@ public class MainActivity extends AppCompatActivity{
             }
         });
         colorAnimator.start();
+
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        if (args != null) {
+            String path = args.getString(BUNDLE_QUERY_KEY);
+            Uri uri = RecentQueryEntry.CONTENT_URI.buildUpon().appendPath(path).build();
+            Log.v(LOG_TAG, "ProviderTEST onCreateLoader() uri: " + uri);
+            return new CursorLoader(
+                    this,
+                    uri,
+                    null,
+                    null,
+                    null,
+                    null);
+        } else {
+            return new CursorLoader(
+                    this,
+                    RecentQueryEntry.CONTENT_URI,
+                    null,
+                    null,
+                    null,
+                    null);
+        }
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        mAdapter.swapCursor(data);
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mAdapter.swapCursor(null);
+    }
 }
